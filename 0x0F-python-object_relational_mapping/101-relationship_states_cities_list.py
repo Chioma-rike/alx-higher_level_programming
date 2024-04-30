@@ -1,34 +1,31 @@
 #!/usr/bin/python3
-
-""" lists all State objects, and corresponding City objects,
-contained in the database """
+"""Module that lists all State objects, and corresponding City objects,\
+        contained in the mySQL database"""
+import sys
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from relationship_state import State
+from relationship_city import City
 
 if __name__ == "__main__":
+    # Create a database engine using the provided arguments
+    engine = create_engine("mysql+mysqldb://{}:{}@localhost/{}"
+                           .format(sys.argv[1], sys.argv[2], sys.argv[3]),
+                           pool_pre_ping=True)
 
-    import sys
-    from sqlalchemy import create_engine
-    from sqlalchemy.ext.declarative import declarative_base
-    from sqlalchemy.orm import sessionmaker
-    from relationship_city import City
-    from relationship_state import Base, State
-
-    inp = sys.argv
-    if len(inp) < 4:
-        exit(1)
-
-    conn_str = "mysql+mysqldb://{}:{}@localhost:3306/{}"
-    engine = create_engine(conn_str.format(inp[1], inp[2], inp[3]))
+    # Create a session factory bound to the engine
     Session = sessionmaker(bind=engine)
 
-    Base.metadata.create_all(engine)
-
+    # Create a session object
     session = Session()
-    my_query = session.query(State) \
-                      .order_by(State.id) \
-                      .all()
-    for state in my_query:
-        print("{}: {}".format(state.id, state.name))
-        for city in state.cities:
-            print("\t{}: {}".format(city.id, city.name))
 
-    session.close()
+    # Retrieve all states from the database and order them by ID
+    for state in session.query(State).order_by(State.id):
+        # Print state ID and name
+        print("{}: {}".format(state.id, state.name))
+
+        # Iterate over the cities associated with the current state
+        for city in state.cities:
+            # Print city ID and name
+            print("    {}: {}".format(city.id, city.name))
+
